@@ -66,7 +66,8 @@ class TinyFish:
 
     # ---------- Fetch ----------
     def fetch(self, urls: list[str], fmt: str = "markdown",
-              purpose: str | None = None, timeout_ms: int = 60000) -> dict[str, dict]:
+              purpose: str | None = None, timeout_ms: int = 60000,
+              include_selectors: list[str] | None = None) -> dict[str, dict]:
         """Fetch up to 10 URLs. Returns {requested_url: result}."""
         out: dict[str, dict] = {}
         for i in range(0, len(urls), 10):
@@ -74,6 +75,8 @@ class TinyFish:
             body = {"urls": batch, "format": fmt, "per_url_timeout_ms": timeout_ms}
             if purpose:
                 body["purpose"] = purpose
+            if include_selectors:
+                body["include_selectors"] = include_selectors
             r = self.session.post(FETCH_URL, json=body, timeout=150)
             self.usage.fetch_calls += 1
             if r.status_code != 200:
@@ -86,20 +89,35 @@ class TinyFish:
 
     # ---------- Agent ----------
     def agent(self, url: str, goal: str, max_steps: int = 40,
-              timeout_s: int = 240) -> dict:
-        body = {
+              timeout_s: int = 240, use_profile: bool = False) -> dict:
+        full = {
             "url": url,
             "goal": goal,
             "browser_profile": "lite",
             "api_integration": "internship-finder",
-            "agent_config": {"max_steps": max_steps, "max_duration_seconds": timeout_s - 20},
+            "agent_config": {"max_steps": max_steps},
         }
-        r = self.session.post(AGENT_URL, json=body, timeout=timeout_s)
+        minimal = {"url": url, "goal": goal}
+        if use_profile:  # saved browser profile = your signed-in cookies
+            full["use_profile"] = minimal["use_profile"] = True
+        data, last = None, ""
+        for body in (full, minimal):  # retry with a bare request if the first is rejected
+            try:
+                r = self.session.post(AGENT_URL, json=body, timeout=timeout_s)
+            except requests.RequestException as e:
+                raise TinyFishError(f"Agent request failed: {type(e).__name__}")
+            try:
+                data = r.json()
+            except ValueError:
+                data = None
+            if r.status_code < 400 or r.status_code >= 500:
+                break
+            err = (data or {}).get("error") or {}
+            last = f"HTTP {r.status_code} {err.get('code', '')} {err.get('message', r.text[:160])}".strip()
         self.usage.agent_runs += 1
-        try:
-            data = r.json()
-        except ValueError:
-            raise TinyFishError(f"Agent failed ({r.status_code})")
+        if not isinstance(data, dict) or ("status" not in data and "error" in data):
+            err = (data or {}).get("error") or {}
+            raise TinyFishError(last or f"HTTP {r.status_code} {err.get('message', '')}".strip())
         self.usage.agent_steps += int(data.get("num_of_steps") or 0)
         if data.get("status") != "COMPLETED":
             msg = (data.get("error") or {}).get("message", "unknown error")
