@@ -1,21 +1,23 @@
-# Scout: a TinyFish-powered internship finder
+# Internship Radar: a TinyFish-powered internship finder
 
-Scout pulls **live** internship and new grad openings from real company careers pages,
+Internship Radar pulls **live** internship and new grad openings from real company careers pages,
 matches them to what you are looking for (role, location, level, skills, visa sponsorship),
 and gives you a clean, ranked, de-duplicated list with direct apply links.
 
-Built for the TinyFish **Job Portal / Careers Finder** bounty.
+Built at the TinyFish × CUB Columbia AI Club workshop.
+
+**Live app:** https://scout-internships.streamlit.app
 
 ## How TinyFish is used
 
 | Step | TinyFish tool | What it does |
 |---|---|---|
-| 1. Discover | **Search** | Runs targeted searches across Greenhouse, Lever, Ashby and Workday for your role and location. Finds live postings and tells Scout which companies are hiring right now. |
-| 2. Read boards | **Fetch** | Reads each discovered company's complete job board as structured JSON, so Scout sees every opening at that company, not just the ones that showed up in search. |
+| 1. Discover | **Search** | Runs targeted searches across Greenhouse, Lever, Ashby and Workday for your role and location. Finds live postings and tells Radar which companies are hiring right now. |
+| 2. Read boards | **Fetch** | Reads each discovered company's complete job board as structured JSON, so Radar sees every opening at that company, not just the ones that showed up in search. |
 | 3. Read postings | **Fetch** | Opens the top postings and reads the full description to check visa sponsorship language, required skills and location. |
 | 4. Operate portals | **Agent** | Workday careers sites only show jobs after you type a search and wait. The Agent does that in a real browser and returns the listings as JSON. |
 
-Then Scout de-duplicates across sources (by job ID, then company + title + location),
+Then Radar de-duplicates across sources (by job ID, then company + title + location),
 scores every opening (role match, level, location, skills, freshness, visa policy)
 and shows **why** each one matched.
 
