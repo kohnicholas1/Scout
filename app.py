@@ -373,7 +373,11 @@ def pipeline(usage=None, running=None, matches=None):
     cells = []
     for n, tool, desc in STEPS:
         num, label, detail = figures[tool]
-        if tool in seen and num is not None:
+        if tool == "Agent" and tool in seen and num is None:
+            last = [m for t, m in usage.log if t == "Agent"][-1]
+            body, state = (f'<div class="big" style="color:var(--bad)">!<small>did not finish</small></div>'
+                           f'<div class="d">{esc(last)[:220]}</div>'), ""
+        elif tool in seen and num is not None:
             body = f'<div class="big">{num:,}<small>{label}</small></div><div class="d">{esc(detail)}</div>'
             state = "done"
         elif running == tool:
