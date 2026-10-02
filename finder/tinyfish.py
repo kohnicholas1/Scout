@@ -90,21 +90,34 @@ class TinyFish:
     # ---------- Agent ----------
     def agent(self, url: str, goal: str, max_steps: int = 40,
               timeout_s: int = 240, use_profile: bool = False) -> dict:
-        body = {
+        full = {
             "url": url,
             "goal": goal,
             "browser_profile": "lite",
             "api_integration": "internship-finder",
-            "agent_config": {"max_steps": max_steps, "max_duration_seconds": timeout_s - 20},
+            "agent_config": {"max_steps": max_steps},
         }
+        minimal = {"url": url, "goal": goal}
         if use_profile:  # saved browser profile = your signed-in cookies
-            body["use_profile"] = True
-        r = self.session.post(AGENT_URL, json=body, timeout=timeout_s)
+            full["use_profile"] = minimal["use_profile"] = True
+        data, last = None, ""
+        for body in (full, minimal):  # retry with a bare request if the first is rejected
+            try:
+                r = self.session.post(AGENT_URL, json=body, timeout=timeout_s)
+            except requests.RequestException as e:
+                raise TinyFishError(f"Agent request failed: {type(e).__name__}")
+            try:
+                data = r.json()
+            except ValueError:
+                data = None
+            if r.status_code < 400 or r.status_code >= 500:
+                break
+            err = (data or {}).get("error") or {}
+            last = f"HTTP {r.status_code} {err.get('code', '')} {err.get('message', r.text[:160])}".strip()
         self.usage.agent_runs += 1
-        try:
-            data = r.json()
-        except ValueError:
-            raise TinyFishError(f"Agent failed ({r.status_code})")
+        if not isinstance(data, dict) or ("status" not in data and "error" in data):
+            err = (data or {}).get("error") or {}
+            raise TinyFishError(last or f"HTTP {r.status_code} {err.get('message', '')}".strip())
         self.usage.agent_steps += int(data.get("num_of_steps") or 0)
         if data.get("status") != "COMPLETED":
             msg = (data.get("error") or {}).get("message", "unknown error")
