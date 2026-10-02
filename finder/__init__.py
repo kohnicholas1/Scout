@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .rank import Job, role_terms, score_job, title_relevant
 from .sources import Prefs, discover, merge, read_boards, read_postings, run_agents
+from . import linkedin
 from .tinyfish import TinyFish, Usage
 
 __all__ = ["Prefs", "Job", "Usage", "find_jobs"]
@@ -26,6 +27,7 @@ def find_jobs(prefs: Prefs, api_key: str | None = None, on_step=None, usage: Usa
 
     # 2. Fetch: read whole job boards of the companies Search surfaced
     board_jobs = read_boards(tf, boards, prefs, groups)
+    li_jobs = linkedin.read_public(tf, prefs, groups) if prefs.use_linkedin else []
     step("Fetch")
 
     # 3. Agent: operate Workday sites (discovered + user supplied)
@@ -35,8 +37,11 @@ def find_jobs(prefs: Prefs, api_key: str | None = None, on_step=None, usage: Usa
         agent_jobs = run_agents(tf, sites, prefs, groups)
         if sites:
             step("Agent")
+    if prefs.linkedin_me:
+        agent_jobs += linkedin.read_signed_in(tf, prefs, groups)
+        step("Agent")
 
-    jobs = merge(board_jobs, found, agent_jobs)
+    jobs = merge(board_jobs, li_jobs, found, agent_jobs)
 
     # Pre-rank, then open the best postings to read visa policy and skills
     for j in jobs:

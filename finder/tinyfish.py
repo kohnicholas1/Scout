@@ -66,7 +66,8 @@ class TinyFish:
 
     # ---------- Fetch ----------
     def fetch(self, urls: list[str], fmt: str = "markdown",
-              purpose: str | None = None, timeout_ms: int = 60000) -> dict[str, dict]:
+              purpose: str | None = None, timeout_ms: int = 60000,
+              include_selectors: list[str] | None = None) -> dict[str, dict]:
         """Fetch up to 10 URLs. Returns {requested_url: result}."""
         out: dict[str, dict] = {}
         for i in range(0, len(urls), 10):
@@ -74,6 +75,8 @@ class TinyFish:
             body = {"urls": batch, "format": fmt, "per_url_timeout_ms": timeout_ms}
             if purpose:
                 body["purpose"] = purpose
+            if include_selectors:
+                body["include_selectors"] = include_selectors
             r = self.session.post(FETCH_URL, json=body, timeout=150)
             self.usage.fetch_calls += 1
             if r.status_code != 200:
@@ -86,7 +89,7 @@ class TinyFish:
 
     # ---------- Agent ----------
     def agent(self, url: str, goal: str, max_steps: int = 40,
-              timeout_s: int = 240) -> dict:
+              timeout_s: int = 240, use_profile: bool = False) -> dict:
         body = {
             "url": url,
             "goal": goal,
@@ -94,6 +97,8 @@ class TinyFish:
             "api_integration": "internship-finder",
             "agent_config": {"max_steps": max_steps, "max_duration_seconds": timeout_s - 20},
         }
+        if use_profile:  # saved browser profile = your signed-in cookies
+            body["use_profile"] = True
         r = self.session.post(AGENT_URL, json=body, timeout=timeout_s)
         self.usage.agent_runs += 1
         try:

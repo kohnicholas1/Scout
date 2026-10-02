@@ -43,6 +43,8 @@ class Prefs:
     companies: list = field(default_factory=list)
     agent_urls: list = field(default_factory=list)
     use_agent: bool = True
+    use_linkedin: bool = True     # public LinkedIn search via Fetch
+    linkedin_me: bool = False     # signed-in LinkedIn via Agent + saved profile
     max_boards: int = 10
     max_agent_sites: int = 3
 
