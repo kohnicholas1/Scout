@@ -1,27 +1,33 @@
-# Internship Radar: a TinyFish-powered internship finder
+# Snag: a TinyFish-powered internship finder
 
-Internship Radar pulls **live** internship and new grad openings from real company careers pages,
+Snag pulls **live** internship and new grad openings from real company careers pages,
 matches them to what you are looking for (role, location, level, skills, visa sponsorship),
 and gives you a clean, ranked, de-duplicated list with direct apply links.
 
 Built at the TinyFish × CUB Columbia AI Club workshop.
 
-**Live app:** https://scout-internships.streamlit.app
+**Live app:** https://snag-internships.streamlit.app
 
 ## How TinyFish is used
 
 | Step | TinyFish tool | What it does |
 |---|---|---|
-| 1. Discover | **Search** | Runs targeted searches across Greenhouse, Lever, Ashby and Workday for your role and location. Finds live postings and tells Radar which companies are hiring right now. |
-| 2. Read boards | **Fetch** | Reads each discovered company's complete job board as structured JSON, so Radar sees every opening at that company, not just the ones that showed up in search. |
+| 1. Discover | **Search** | Runs targeted searches across Greenhouse, Lever, Ashby and Workday for your role and location. Finds live postings and tells Snag which companies are hiring right now. |
+| 2. Read boards | **Fetch** | Reads each discovered company's complete job board as structured JSON, so Snag sees every opening at that company, not just the ones that showed up in search. |
 | 3. Read postings | **Fetch** | Opens the top postings and reads the full description to check visa sponsorship language, required skills and location. |
 | 4. Operate portals | **Agent** | Workday careers sites only show jobs after you type a search and wait. The Agent does that in a real browser and returns the listings as JSON. |
 
-Then Radar de-duplicates across sources (by job ID, then company + title + location),
+Then Snag de-duplicates across sources (by job ID, then company + title + location),
 scores every opening (role match, level, location, skills, freshness, visa policy)
 and shows **why** each one matched.
 
 ## Features
+
+- **LinkedIn**: reads LinkedIn's public job search with TinyFish Fetch (no sign-in needed)
+- **My LinkedIn (owner only)**: the TinyFish Agent browses LinkedIn signed in as you using a saved
+  Browser Context Profile, and **Apply with Agent** submits Easy Apply applications. It only submits
+  when LinkedIn already has every answer; otherwise it stops and lists the questions.
+- **Résumé match**: upload a PDF, DOCX or TXT résumé; skills are extracted in memory (never stored)
 
 - Your own preferences: role, location, level (internship / new grad), skills, remote, visa
 - Visa filter: flags postings that say they won't sponsor and highlights ones that mention sponsorship or CPT/OPT
@@ -42,6 +48,9 @@ streamlit run app.py
 Get a key at https://agent.tinyfish.ai/api-keys. The key is read from
 `.streamlit/secrets.toml` (git-ignored) or the `TINYFISH_API_KEY` environment variable.
 It is never committed or shown in the app.
+
+To unlock **My LinkedIn**, also set `OWNER_CODE = "something only you know"` in secrets, and in the
+TinyFish dashboard create a Browser Context Profile, sign in to LinkedIn there, and set it as default.
 
 ## Cost
 
