@@ -32,6 +32,7 @@ class Usage:
     agent_runs: int = 0
     agent_steps: int = 0
     log: list = field(default_factory=list)
+    stats: dict = field(default_factory=dict)
 
     def note(self, tool: str, message: str) -> None:
         self.log.append((tool, message))

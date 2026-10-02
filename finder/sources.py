@@ -116,6 +116,7 @@ def discover(tf: TinyFish, prefs: Prefs) -> tuple[list[Job], dict, list[str]]:
                 description=r.get("snippet", ""), posted=parse_date(r.get("date")),
                 source=f"{ats.title()} (search)", tool="Search", key=f"{ats}:{slug}:{job_id}",
             ))
+    tf.usage.stats.update(searches=len(queries), postings=len(jobs), companies=len(boards), workday=len(workday))
     tf.usage.note("Search", f"{len(queries)} searches found {len(jobs)} postings at "
                   f"{len(boards)} companies and {len(workday)} Workday sites")
     return jobs, boards, workday
@@ -183,6 +184,7 @@ def read_boards(tf: TinyFish, boards: dict, prefs: Prefs, groups) -> list[Job]:
         board = _board_jobs(ats, slug, data)
         total += len(board)
         jobs.extend(j for j in board if title_relevant(j.title, groups, prefs.seniority, prefs.keywords))
+    tf.usage.stats.update(boards=read, board_openings=total, board_fit=len(jobs))
     tf.usage.note("Fetch", f"read {read} company job boards ({total} openings), {len(jobs)} fit your role")
     return jobs
 
@@ -226,10 +228,12 @@ def read_postings(tf: TinyFish, jobs: list[Job], limit: int = 20) -> None:
         if not res or not res.get("text"):
             continue
         read += 1
+        j.read = True
         text = res["text"].split("## Similar Jobs")[0]
         j.description = text[:20000]
         if not j.location:
             j.location = guess_location(text)
+    tf.usage.stats["postings_read"] = read
     tf.usage.note("Fetch", f"opened {read} postings to check visa policy, skills and location")
 
 
@@ -278,6 +282,10 @@ def run_agents(tf: TinyFish, sites: list[str], prefs: Prefs, groups) -> list[Job
                     posted=parse_date(j.get("posted")), source="Workday (agent)", tool="Agent",
                     key=link,
                 ))
+            st_ = tf.usage.stats
+            st_["agent_sites"] = st_.get("agent_sites", 0) + 1
+            st_["agent_listings"] = st_.get("agent_listings", 0) + len(found)
+            st_["agent_fit"] = st_.get("agent_fit", 0) + kept
             tf.usage.note("Agent", f"searched {company}'s careers site in a real browser: "
                           f"{len(found)} listings, {kept} fit your role")
     return jobs

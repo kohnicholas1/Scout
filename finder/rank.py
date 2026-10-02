@@ -81,6 +81,7 @@ class Job:
     score: int = 0
     reasons: list = field(default_factory=list)
     visa: str = "Not stated"  # "Sponsors" / "No sponsorship" / "Not stated"
+    read: bool = False        # full posting opened with TinyFish Fetch
 
     @property
     def posted_label(self) -> str:

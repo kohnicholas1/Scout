@@ -9,9 +9,9 @@ from .tinyfish import TinyFish, Usage
 __all__ = ["Prefs", "Job", "Usage", "find_jobs"]
 
 
-def find_jobs(prefs: Prefs, api_key: str | None = None, on_step=None):
+def find_jobs(prefs: Prefs, api_key: str | None = None, on_step=None, usage: Usage | None = None):
     """Run the full pipeline. on_step(tool, message) is called as stages finish."""
-    usage = Usage()
+    usage = usage or Usage()
     tf = TinyFish(api_key, usage)
     groups = role_terms(prefs.role)
 
@@ -48,4 +48,9 @@ def find_jobs(prefs: Prefs, api_key: str | None = None, on_step=None):
     for j in jobs:
         score_job(j, groups, prefs.seniority, prefs.keywords, prefs.location, prefs.remote_ok, prefs.need_visa)
     jobs.sort(key=lambda j: (-j.score, j.company))
+    usage.stats.update(unique=len(jobs), top=jobs[0].score if jobs else 0)
+    usage.note("Score", f"de-duplicated and ranked {len(jobs)} unique openings on role, level, "
+               "location, skills, freshness and visa policy")
+    if on_step:
+        on_step(*usage.log[-1])
     return jobs, usage
